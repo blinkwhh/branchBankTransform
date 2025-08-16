@@ -1,2 +1,4 @@
 print ("hello world")
 print("from macbook")
+print("now everything is ok")
+print("now everything is ok2")
