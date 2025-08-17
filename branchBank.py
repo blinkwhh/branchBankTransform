@@ -1,3 +1,7 @@
+import os
+from openpyxl import Workbook
+from openpyxl.styles import Font
+
 def ip_to_int(ip_str):
     """将点分十进制IP地址转换为32位整数"""
     parts = ip_str.split('.')
@@ -78,7 +82,36 @@ def load_cidr_from_file(filename):
         print(f"错误: 文件 {filename} 未找到")
     return cidr_list
 
-def batch_verify_acl_coverage(acl_file, cidr_file):
+def export_to_excel(data, filename, title="未覆盖的CIDR列表"):
+    """将数据导出到Excel文件"""
+    # 创建工作簿和工作表
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "未覆盖CIDR"
+    
+    # 添加标题
+    ws['A1'] = title
+    ws['A1'].font = Font(bold=True, size=14)
+    
+    # 添加表头
+    ws['A3'] = "序号"
+    ws['B3'] = "CIDR网段"
+    ws['A3'].font = Font(bold=True)
+    ws['B3'].font = Font(bold=True)
+    
+    # 添加数据
+    for idx, cidr in enumerate(data, start=1):
+        ws.append([idx, cidr])
+    
+    # 调整列宽
+    ws.column_dimensions['A'].width = 8
+    ws.column_dimensions['B'].width = 25
+    
+    # 保存文件
+    wb.save(filename)
+    print(f"Excel文件已生成: {os.path.abspath(filename)}")
+
+def batch_verify_acl_coverage(acl_file, cidr_file, excel_output="uncovered_cidrs.xlsx"):
     """批量验证CIDR网段是否被ACL覆盖"""
     # 加载ACL和CIDR列表
     acl_list = load_acl_from_file(acl_file)
@@ -127,9 +160,8 @@ def batch_verify_acl_coverage(acl_file, cidr_file):
     
     # 输出未覆盖的CIDR列表
     if not_covered:
-        print("\n未覆盖的CIDR列表:")
-        for cidr in not_covered:
-            print(cidr)
+        export_to_excel(not_covered, excel_output)
+        print(f"\n已导出 {len(not_covered)} 条未覆盖CIDR到Excel文件")
     else:
         print("\n所有CIDR网段都被ACL覆盖！")
 
@@ -138,6 +170,7 @@ if __name__ == "__main__":
     # 文件路径
     acl_file = "PRDOA_ACL.txt"
     cidr_file = "WN_DS_routes.txt"
+    excel_output = "uncovered_cidrs.xlsx"
     
     # 执行批量验证
-    batch_verify_acl_coverage(acl_file, cidr_file)
+    batch_verify_acl_coverage(acl_file, cidr_file, excel_output)
